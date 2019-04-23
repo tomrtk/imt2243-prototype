@@ -1,9 +1,9 @@
 # Object detection prototype
 
-Prototype implementation of object-oriented object detection from video using
+Prototype implementation of an object-oriented object detection from video using
 OpenCV and Darknet YOLOv3 object detection and pre-trained model from Darknet.
 
-Part of a project in planning, requirements specification and
+Small part of a project in planning, requirements specification and
 design of an autonomous ship control software spring 2019 in
 the course IMT2243 - Software Engineering at NTNU Gjøvik.
 

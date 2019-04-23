@@ -15,10 +15,12 @@ class ObjectDetection:  # Dummy class for prototype
 
 class VisualDetection(ObjectDetection):
 
-    def __init__(self, weightsPath, configPath, streamPath="0"):
+    def __init__(self, weightsPath, configPath, streamPath=0):
         """Constructor
 
         Setup it's own data from parameters and predefined values.
+
+        If no streamPath is given webcam will be used.
 
         """
 

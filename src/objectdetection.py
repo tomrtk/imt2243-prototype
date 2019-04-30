@@ -16,7 +16,7 @@ class ObjectDetection:  # Dummy class for prototype
 
 class VisualDetection(ObjectDetection):
 
-    def __init__(self, weightsPath, configPath, streamPath=0):
+    def __init__(self, weightsPath, configPath, labelPath, streamPath=0):
         """Constructor
 
         Setup it's own data from parameters and predefined values.
@@ -24,6 +24,7 @@ class VisualDetection(ObjectDetection):
         @Arguments:
             weightsPath: Pre-trained yolo modell weights
             configPath: yolov3.cfg file for modell
+            labelPath: coco.names file with names of objects
             streamPath: path to video, camera or webcam ip/url.
                         Defaults to built in webcam.
 
@@ -35,8 +36,7 @@ class VisualDetection(ObjectDetection):
         self.__thres = 0.3
 
         # load the COCO class labels our YOLO model was trained on
-        labelsPath = "../yolo-coco/coco.names"
-        self.LABELS = open(labelsPath).read().strip().split("\n")
+        self.LABELS = open(labelPath).read().strip().split("\n")
 
         (self.W, self.H) = (None, None)
 
@@ -186,12 +186,15 @@ class Object:
 
 def main():
 
-    with VisualDetection("../yolo-coco/yolov3.weights", "../yolo-coco/yolov3.cfg") as od:
+    with VisualDetection("../yolo-coco/yolov3.weights",
+                         "../yolo-coco/yolov3.cfg",
+                         "../yolo-coco/coco.names"  ) as od:
+
         print("Detect object in video...")
         od.detectObject()
 
     del od
 
 
-main()
+main() # Call main function to start
 

@@ -45,22 +45,27 @@ class VisualDetection(ObjectDetection):
         self.COLORS = np.random.randint(0, 255, size=(len(self.LABELS), 3),
 	dtype="uint8")
 
+
     def __enter__(self):
-        # Setup darknet & opencv
-        self.net = cv2.dnn.readNetFromDarknet(self.__configPath, self.__weightsPath)
+        """__enter__
+
+        Function called when creating object using 'with'
+
+        """
+        # Setup darknet & opencv using parameter set in __init__
+        self.net = cv2.dnn.readNetFromDarknet(self.__configPath,
+                                             self.__weightsPath)
         self.vs = cv2.VideoCapture(self.__streamPath)
         self.ln = self.net.getLayerNames()
         self.ln = [self.ln[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
 
-        #setup opticalflow
-        ret, frame = self.vs.read()
-        self.prvs = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-        self.hsv = np.zeros_like(frame)
-        self.hsv[...,1] = 255
-
         return self
 
     def __exit__(self, exc_type, exe_value, traceback):
+        """
+        Function called when exit a 'with' block for an object to cleanup
+
+        """
         cv2.destroyAllWindows()
         self.vs.release()
 
@@ -70,7 +75,12 @@ class VisualDetection(ObjectDetection):
         """Detects objects in video stream
 
         Read next frame in self.vs and detect objects in it
+
+        For prototype image is also showed from this function. Would
+        be moved to a show video stream function.
         """
+
+        # Counter for frames and time to calc FPS
         frames = 0
         start = time.time()
 
@@ -80,7 +90,7 @@ class VisualDetection(ObjectDetection):
 
             # if no frame
             if not ok:
-                print("not ok")
+                print("Error: no frame to prosess")
                 break
 
             # Exit logic, if 'q' is pressed, breaks out of loop
@@ -91,12 +101,17 @@ class VisualDetection(ObjectDetection):
             if self.W is None or self.H is None:
                 (self.H, self.W) = frame.shape[:2] # get size of frame
 
+
+            # convert frame to req. format and call detection
             blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416),
                     swapRB=True, crop=False)
 
             out_det = self.yolo(blob, frame)
 
+            # Display video and detection
             cv2.imshow("output", out_det)
+
+            # Calculate FPS and print to terminal
             frames += 1
             fps = frames / ( time.time() - start )
             print("FPS: {0:.1f} ".format(fps))
@@ -108,8 +123,9 @@ class VisualDetection(ObjectDetection):
         confidence above threshold limits __confi and __thres, draw
         bounding boxes.
 
-        """
+        TODO: Split up function
 
+        """
 
         self.net.setInput(blob)
         layerOutputs = self.net.forward(self.ln)
@@ -138,7 +154,8 @@ class VisualDetection(ObjectDetection):
                         # actually returns the center (x, y)-coordinates of
                         # the bounding box followed by the boxes' width and
                         # height
-                        box = detection[0:4] * np.array([self.W, self.H, self.W, self.H])
+                        box = detection[0:4] * np.array([self.W, self.H,
+                                                        self.W, self.H])
                         (centerX, centerY, width, height) = box.astype("int")
 
                         # use the center (x, y)-coordinates to derive the top
@@ -154,7 +171,8 @@ class VisualDetection(ObjectDetection):
 
         # apply non-maxima suppression to suppress weak, overlapping
         # bounding boxes
-        idxs = cv2.dnn.NMSBoxes(boxes, confidences, self.__confi, self.__thres)
+        idxs = cv2.dnn.NMSBoxes(boxes, confidences,
+                                self.__confi, self.__thres)
 
         # ensure at least one detection exists
         if len(idxs) > 0:
@@ -167,8 +185,12 @@ class VisualDetection(ObjectDetection):
                 # draw a bounding box rectangle and label on the frame
                 color = [int(c) for c in self.COLORS[classIDs[i]]]
                 cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-                text = "{}: {:.4f}".format(self.LABELS[classIDs[i]],confidences[i])
-                cv2.putText(frame, text, (x, y - 5),cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                text = "{}: {:.4f}".format(self.LABELS[classIDs[i]],
+                                            confidences[i])
+                cv2.putText(frame, text,
+                            (x, y - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5, color, 2)
 
         return frame
 
@@ -186,6 +208,7 @@ class Object:
 
 def main():
 
+    # creates a detection object and start detection
     with VisualDetection("../yolo-coco/yolov3.weights",
                          "../yolo-coco/yolov3.cfg",
                          "../yolo-coco/coco.names"  ) as od:

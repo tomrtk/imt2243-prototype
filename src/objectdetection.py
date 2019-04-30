@@ -5,6 +5,7 @@
 
 """
 import cv2
+import time
 import numpy as np
 
 class ObjectDetection:  # Dummy class for prototype
@@ -20,10 +21,13 @@ class VisualDetection(ObjectDetection):
 
         Setup it's own data from parameters and predefined values.
 
-        If no streamPath is given webcam will be used.
+        @Arguments:
+            weightsPath: Pre-trained yolo modell weights
+            configPath: yolov3.cfg file for modell
+            streamPath: path to video, camera or webcam ip/url.
+                        Defaults to built in webcam.
 
         """
-
         self.__weightsPath = weightsPath
         self.__configPath = configPath
         self.__streamPath = streamPath
@@ -42,10 +46,18 @@ class VisualDetection(ObjectDetection):
 	dtype="uint8")
 
     def __enter__(self):
+        # Setup darknet & opencv
         self.net = cv2.dnn.readNetFromDarknet(self.__configPath, self.__weightsPath)
         self.vs = cv2.VideoCapture(self.__streamPath)
         self.ln = self.net.getLayerNames()
         self.ln = [self.ln[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
+
+        #setup opticalflow
+        ret, frame = self.vs.read()
+        self.prvs = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+        self.hsv = np.zeros_like(frame)
+        self.hsv[...,1] = 255
+
         return self
 
     def __exit__(self, exc_type, exe_value, traceback):
@@ -58,8 +70,9 @@ class VisualDetection(ObjectDetection):
         """Detects objects in video stream
 
         Read next frame in self.vs and detect objects in it
-
         """
+        frames = 0
+        start = time.time()
 
         ok = True
         while( ok ):
@@ -81,10 +94,12 @@ class VisualDetection(ObjectDetection):
             blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416),
                     swapRB=True, crop=False)
 
-            frame = self.yolo(blob, frame)
+            out_det = self.yolo(blob, frame)
 
-            cv2.imshow("output", frame)
-            print("output")
+            cv2.imshow("output", out_det)
+            frames += 1
+            fps = frames / ( time.time() - start )
+            print("FPS: {0:.1f} ".format(fps))
 
     def yolo(self, blob, frame):
         """YOLO detection on frame,
@@ -158,17 +173,20 @@ class VisualDetection(ObjectDetection):
         return frame
 
 
-
 class Object:
+    """Place holder class, not implemented
+
+    """
     def __init__(self, x, y, z):
         self.__x = x
         self.__y = y
         self.__z = z
 
 
+
 def main():
 
-    with VisualDetection("../yolo-coco/yolov3.weights", "../yolo-coco/yolov3.cfg", "../test_tracking.mp4") as od:
+    with VisualDetection("../yolo-coco/yolov3.weights", "../yolo-coco/yolov3.cfg") as od:
         print("Detect object in video...")
         od.detectObject()
 

@@ -41,7 +41,7 @@ Minimal install of Darknet, no direct OpenCV and CUDA suport
 git clone https://github.com/pjreddie/darknet
 cd darknet
 make
-
+cd ..
 mkdir yolo-coco
 cd yolo-coco
 wget https://pjreddie.com/media/files/yolov3.weights
